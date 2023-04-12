@@ -40,6 +40,41 @@ def show_image(img):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+def check_the_frame(vector,frame):
+    # print("here")
+    # print(tensor)
+
+    # results.show()
+    img = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    results = model(img)
+    tensor = results.xyxy[0]
+    vector = Tesnor_to_vector_array(tensor)
+
+    # resultss.show()
+    if len(vector) == 0:
+        #results.show()
+        img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        resultss = model(img)
+        #resultss.show()
+        tensor = resultss.xyxy[0]
+        vector = Tesnor_to_vector_array(tensor)
+
+
+        if len(vector) == 4 :
+            vector=[vector[1], vector[0], vector[3], vector[2]]
+
+    if len(vector) == 8:
+        img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        resultss = model(img)
+        # resultss.show()
+        tensor = resultss.xyxy[0]
+        vector = Tesnor_to_vector_array(tensor)
+        if len(vector) == 4 :
+            vector=[vector[1], vector[0], vector[3], vector[2]]
+
+    if len(vector)==4:
+        vector = [vector[1], vector[0], vector[3], vector[2]]
+    return vector
 
 
 
@@ -47,7 +82,7 @@ def show_image(img):
 
 
 def get_bounding(folder_path):
-    model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+
 
     # Set device (CPU/GPU)
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -73,27 +108,28 @@ def get_bounding(folder_path):
                         if not ret:
                             break
                         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                        img = frame
+                        #img = frame
                         results = model(frame)
                         tensor = results.xyxy[0]
 
                         vector = Tesnor_to_vector_array(tensor)
-                        if len(vector)==0:
-                            print("here")
-                            print(tensor)
-                            results.show()
-                        if len(vector)==8:
-                            print("here with 8")
-                            print(tensor)
-                            results.show()
+                        if len(vector)==0 or 8:
+                            vector_with_check=check_the_frame(vector,frame)
+
+
+
+
 
                         #print(len(vector))
                             # print(vector)
                             # print("sep")
 
                             # show_image_with_bounding(img, resu)
-                        matrix.append(vector)
-                            #print(len(matrix))
+                        if len(vector)==4 :
+                            matrix.append(vector)
+                        elif len(vector_with_check)==4 :
+                            matrix.append(vector_with_check)
+
 
 
                         # print("sep")
@@ -102,7 +138,7 @@ def get_bounding(folder_path):
                 print(len(matrix))
 
                 m = np.concatenate(matrix)
-                #print(len(m))
+                print(len(m))
                 #print(m)
 
                 my_dict[f'{i}'] = m
@@ -110,6 +146,6 @@ def get_bounding(folder_path):
             # print(my_dict)
     return my_dict
 
-
+model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
 folder_path_fall = "yolov5-master/dataset/train/fall"
 fall = get_bounding(folder_path_fall)
